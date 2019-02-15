@@ -71,6 +71,9 @@ begin
 		print("No data value not defined (need 'NODATA_value' header), using default instead")
 	end if
 
+	; replace missing values with zeros
+	data_table = where(.not.ismissing(data_table),data_table,0.0)
+
 	return(data_table)
 
 end
@@ -117,7 +120,7 @@ begin
 	;; time -> use 2 (so anthro_emiss will interpolate okay)
 	;; lat  -> use number of rows
 	;; lon  -> use number of columns
-	dimNames = (/"time","north_south","west_east"/)
+	dimNames = (/"time","lat","lon"/)
 	dimSizes = (/2,nrows,ncols/)
 	dimUnlim = (/False,False,False/) 
 	
@@ -134,10 +137,10 @@ begin
 	Date_Var@long_name = "Date"
 
 	;;;; name the dimensions for lat and lon data
-	lat_data!0 = "north_south"
-	lon_data!0 = "north_south"
-	lat_data!1 = "west_east"
-	lon_data!1 = "west_east"
+	lat_data!0 = "lat"
+	lon_data!0 = "lat"
+	lat_data!1 = "lon"
+	lon_data!1 = "lon"
 	lat_data@units = "degrees_north"
 	lon_data@units = "degrees_east"
 	lat_data@long_name = "Latitude"
@@ -147,8 +150,8 @@ begin
 	;;;; create a dummy data variable
 	Data_Var = new((/2,nrows,ncols/),float,-9999)
 	Data_Var!0 = "time"
-	Data_Var!1 = "north_south"
-	Data_Var!2 = "west_east"
+	Data_Var!1 = "lat"
+	Data_Var!2 = "lon"
 	Data_Var@units = "tonnes/km^2/year"
 	
 	;;;; define the file settings
@@ -159,10 +162,10 @@ begin
 		fileattdef(OUTFILE,globalAtt)
 	
 		; create the lat and lon data arrays
-		filevardef(OUTFILE, "XLAT", typeof(lat_data), getvardims(lat_data))                          
-		filevardef(OUTFILE, "XLONG", typeof(lon_data), getvardims(lon_data))                          
-		filevarattdef(OUTFILE, "XLAT", lat_data)
-		filevarattdef(OUTFILE, "XLONG", lon_data)
+		filevardef(OUTFILE, "lat", typeof(lat_data), getvardims(lat_data))                          
+		filevardef(OUTFILE, "lon", typeof(lon_data), getvardims(lon_data))                          
+		filevarattdef(OUTFILE, "lat", lat_data)
+		filevarattdef(OUTFILE, "lon", lon_data)
 	
 		; create the time data array
 		filevardef(OUTFILE, "date", typeof(Date_Var), getvardims(Date_Var))
@@ -177,8 +180,8 @@ begin
 	setfileoption(OUTFILE,"DefineMode",False)
 
 	;;;; copy time and position data over to the file
-	OUTFILE->XLAT = (/lat_data/)
-	OUTFILE->XLONG = (/lon_data/)
+	OUTFILE->lat = (/lat_data/)
+	OUTFILE->lon = (/lon_data/)
 	OUTFILE->date = (/Date_Var/)
 
 
