@@ -14,10 +14,6 @@ species_dir = (/"CH4","CO","HCl","NH3","NMVOC","NOx","PM01","PM1","PM25","PM10",
 species_str = (/"ch4","co","hcl","nh3","voc","nox","pm0_1","pm1","pm2_5","pm10","so2"/)
 netcdf_names = (/"ch4","co","hcl","nh3","nmvoc","nox","pm0_1","pm1","pm2_5","pm10","so2"/)
 
-species_dir := (/"NMVOC"/)
-species_str := (/"voc"/)
-netcdf_names := (/"nmvoc"/)
-
 
 input_paths = root_dir+species_dir+"/"
 input_tails = species_str+"16.asc"
