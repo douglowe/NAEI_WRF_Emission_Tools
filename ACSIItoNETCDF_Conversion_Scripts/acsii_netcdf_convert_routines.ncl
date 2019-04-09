@@ -81,7 +81,8 @@ end
 
 undef("netcdf_file_create")
 function netcdf_file_create(filepath:string,filename:string,lat_data:numeric,lon_data:numeric,\
-							head:logical,var_names:string)
+							north_data:numeric,east_data:numeric,\
+							head:logical,var_names:string,lat_name:string, lon_name:string)
 local OUTFILE, dimNames, dimSizes, dimUnlim, globalatt, Time_Var, Data_Var, vari, \
 		ncols, nrows
 begin
@@ -145,7 +146,13 @@ begin
 	lon_data@units = "degrees_east"
 	lat_data@long_name = "Latitude"
 	lon_data@long_name = "Longitude"
-
+	;;;; name the dimensions for northing and easting data
+	north_data!0 = "lat"
+	east_data!0  = "lon"
+	north_data@units = "metres north from origin"
+	east_data@units  = "metres east from origin"
+	north_data@long_name = "Northings"
+	east_data@long_name  = "Eastings"
 	
 	;;;; create a dummy data variable
 	Data_Var = new((/2,nrows,ncols/),float,-9999)
@@ -162,10 +169,16 @@ begin
 		fileattdef(OUTFILE,globalAtt)
 	
 		; create the lat and lon data arrays
-		filevardef(OUTFILE, "lat", typeof(lat_data), getvardims(lat_data))                          
-		filevardef(OUTFILE, "lon", typeof(lon_data), getvardims(lon_data))                          
-		filevarattdef(OUTFILE, "lat", lat_data)
-		filevarattdef(OUTFILE, "lon", lon_data)
+		filevardef(OUTFILE, lat_name, typeof(lat_data), getvardims(lat_data))                          
+		filevardef(OUTFILE, lon_name, typeof(lon_data), getvardims(lon_data))                          
+		filevarattdef(OUTFILE, lat_name, lat_data)
+		filevarattdef(OUTFILE, lon_name, lon_data)
+
+		; create the northing and easting data arrays
+		filevardef(OUTFILE, "north", typeof(north_data), getvardims(north_data))
+		filevardef(OUTFILE, "east", typeof(east_data), getvardims(east_data))
+		filevarattdef(OUTFILE, "north", north_data)
+		filevarattdef(OUTFILE, "east", east_data)
 	
 		; create the time data array
 		filevardef(OUTFILE, "date", typeof(Date_Var), getvardims(Date_Var))
@@ -180,9 +193,11 @@ begin
 	setfileoption(OUTFILE,"DefineMode",False)
 
 	;;;; copy time and position data over to the file
-	OUTFILE->lat = (/lat_data/)
-	OUTFILE->lon = (/lon_data/)
+	OUTFILE->$lat_name$ = (/lat_data/)
+	OUTFILE->$lon_name$ = (/lon_data/)
 	OUTFILE->date = (/Date_Var/)
+	OUTFILE->north = (/north_data/)
+	OUTFILE->east  = (/east_data/)
 
 
 	; return output file handle

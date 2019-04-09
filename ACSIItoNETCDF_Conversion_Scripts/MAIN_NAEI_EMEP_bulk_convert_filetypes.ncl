@@ -63,10 +63,12 @@ end if
 end if
 lat_data = new((/nrows,ncols/),double,-9999)
 lon_data = new((/nrows,ncols/),double,-9999)
+north_data = new(nrows,double,-9999)
+east_data  = new(ncols,double,-9999)
 
 print("== Creating the Lat/Lon grid from the header information ==")
 
-calculate_lat_lon_grids(lat_data,lon_data,headers)
+calculate_lat_lon_grids(lat_data,lon_data,north_data,east_data,headers)
 
 
 print("== Loop through emission species ==")
@@ -76,7 +78,8 @@ do spci = 0, dimsizes(species_str)-1
 	print("=== Creating the output file for species '"+species_str(spci)+"' ===")
 
 	;;; create the netcdf file, and dimensions, global attributes, and latitude & longitude data
-	OUTFILE = netcdf_file_create(output_paths(spci),netcdf_names(spci)+"_emiss.nc",lat_data,lon_data,headers,var_names)
+	OUTFILE = netcdf_file_create(output_paths(spci),netcdf_names(spci)+"_emiss.nc",\
+								lat_data,lon_data,north_data,east_data,headers,var_names,"latitude","longitude")
 
 
 	;;; process each of the data sets we're loading

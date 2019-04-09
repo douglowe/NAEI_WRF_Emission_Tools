@@ -17,7 +17,7 @@ load "./BNGtolatlonconv.ncl"
 ;   created from the model data information  
 ;
 undef("calculate_lat_lon_grids")
-procedure calculate_lat_lon_grids(lat_data:numeric,lon_data:numeric,head:logical)
+procedure calculate_lat_lon_grids(lat_data:numeric,lon_data:numeric,north_data:numeric,east_data:numeric,head:logical)
 local n_data, e_data, eastings, northings, options, lat_lon, ncols, nrows
 begin
 
@@ -82,6 +82,14 @@ e_data = new((/nrows,ncols/),float,-9999)
 eastings  = fspan(xllcorner,(xllcorner + (ncols-1)*cellsize),ncols)
 northings = fspan(yllcorner,(yllcorner + (nrows-1)*cellsize),nrows)
 
+; switch from lower-left corner to middle of gridcell
+eastings  = eastings  + cellsize/2.0
+northings = northings + cellsize/2.0
+
+; copy to 1D arrays for later output
+east_data = (/eastings/)
+north_data = (/northings/)
+
 ; copy the 1D arrays into the 2D arrays
 do ii = 0,nrows-1
 	e_data(ii,:) = (/eastings/)
@@ -96,7 +104,7 @@ options = True
 options@ellipsoid = "airy1830_ellipsoid"
 options@grid = "bng_grid"
 
-lat_lon = utm_latlon(n_data,e_data,options)
+lat_lon = utm_latlon(todouble(n_data),todouble(e_data),options)
 
 ; copy the lat / lon data to the arrays for output
 lat_data = (/lat_lon(0,:,:)/)

@@ -43,7 +43,7 @@ bng_grid@Lon_Ref = -2.0d0		; Longitude of true origin (degrees)
 ;    b, F0, ns, phi and phi0
 ;
 undef("M_calculation")
-function M_calculation(b:numeric,F0:numeric,ns:numeric,phi:numeric,phi0:numeric)
+function M_calculation(b:double,F0:double,ns:double,phi:double,phi0:double)
 local M1, M2, M3, M4
 begin
 
@@ -77,18 +77,18 @@ end
 ;     are made using double precision.
 ;
 undef("phi_prime_iteration")
-function phi_prime_iteration(norths:numeric,ellipsoid:logical,grid:logical)
+function phi_prime_iteration(norths:double,ellipsoid:logical,grid:logical)
 local phi0, ns, phi_prime_array, north_unique, \
 		phi_prime, cond, M1, M2, M3, M4, M
 begin
 
 	; calculate phi0 for grid projection
-	phi0 = grid@Lat_Ref * (PI/180.0d0)
+	phi0 = todouble(grid@Lat_Ref) * (PI/180.0d0)
 	; calculate ns for the ellipsoid
-	ns = (ellipsoid@a - ellipsoid@b) / (ellipsoid@a + ellipsoid@b)
+	ns = (todouble(ellipsoid@a) - todouble(ellipsoid@b)) / (todouble(ellipsoid@a) + todouble(ellipsoid@b))
 
 	; create phi_prime data array
-	phi_prime_array = new(dimsizes(norths),"double",-9999.)
+	phi_prime_array = new(dimsizes(norths),double,-9999.)
 
 	; find the unique northings values
 	north_unique = get_unique_values(norths)
@@ -104,16 +104,16 @@ begin
 		M = 0.0d0		; (has to be 0.0 for the first step)
 
 		; iterating through the calculations for Equation C7
-		do while (cond .ge. 0.01d-3)
+		do while (cond .ge. 0.001d-3)
 			; calculate phi_prime
-			phi_prime = ( ( (/north_unique(ii)/) - grid@N0 - M ) / ( ellipsoid@a * grid@F0 ) ) \
+			phi_prime = ( ( (/north_unique(ii)/) - grid@N0 - M ) / ( todouble(ellipsoid@a) * todouble(grid@F0) ) ) \
 																	+ phi_prime
 
 			; calculating Equation C3
-			M = M_calculation(ellipsoid@b,grid@F0,ns,phi_prime,phi0)
+			M = M_calculation(todouble(ellipsoid@b),todouble(grid@F0),ns,phi_prime,phi0)
 		
 			; calculate the exit condition for the next loop
-			cond = north_unique(ii) - grid@N0 - M
+			cond = north_unique(ii) - todouble(grid@N0) - M
 			
 		end do
 				
@@ -160,7 +160,7 @@ end
 ;					(lat will be value 0, lon will be value 1) 
 ;
 undef("utm_latlon")
-function utm_latlon(norths:numeric,easts:numeric,options:logical)
+function utm_latlon(norths:double,easts:double,options:logical)
 local nw_size, nw_ndim, lat_lon, lat0, lon0, ii, jj, \
 		lambda0, phi_prime, e2, v, rho, eta2, \
 		VII, VIII, IX, X, XI, XII, XIIA, phi, lambda, \
@@ -220,12 +220,12 @@ begin
 	phi_prime = phi_prime_iteration(norths,ellipsoid,grid)
 	
 	; calculate e2 for the ellipsoid
-	e2 = ((ellipsoid@a^2.0d0)-(ellipsoid@b^2.0d0)) / (ellipsoid@a^2.0d0)
+	e2 = ((todouble(ellipsoid@a)^2.0d0)-(todouble(ellipsoid@b)^2.0d0)) / (todouble(ellipsoid@a)^2.0d0)
 	
 	; calculate the values for v, rho and eta2, Equations C2
-	v = ellipsoid@a * grid@F0 * \
+	v = todouble(ellipsoid@a) * todouble(grid@F0) * \
 		( (1.0d0-(e2*(sin(phi_prime)^2.0d0)))^(-0.5d0) )
-	rho = ellipsoid@a * grid@F0 * (1.0d0-e2) * \
+	rho = todouble(ellipsoid@a) * todouble(grid@F0) * (1.0d0-e2) * \
 		( (1.0d0-(e2*(sin(phi_prime)^2.0d0)))^(-1.5d0) )
 	eta2 = (v/rho)-1.0d0
 
@@ -252,14 +252,15 @@ begin
 					(720.0d0*(tan(phi_prime)^6.0d0)) )
 
 	; calculate lambda0 for grid projection
-	lambda0 = grid@Lon_Ref * (PI/180.0d0)
+	lambda0 = todouble(grid@Lon_Ref) * (PI/180.0d0)
 
 	
 	; calculate phi and lambda (Equations C8 and C9)
-	phi = phi_prime - (VII*((easts-grid@E0)^2.0d0)) + (VIII*((easts-grid@E0)^4.0d0)) - (IX*((easts-grid@E0)^6.0d0))
+	phi = phi_prime - (VII*((easts-todouble(grid@E0))^2.0d0)) + \
+			(VIII*((easts-todouble(grid@E0))^4.0d0)) - (IX*((easts-todouble(grid@E0))^6.0d0))
 	
-	lambda = lambda0 + (X*(easts-grid@E0)) - (XI*((easts-grid@E0)^3.0)) + \
-						(XII*((easts-grid@E0)^5.0d0)) - (XIIA*((easts-grid@E0)^7.0d0))
+	lambda = lambda0 + (X*(easts-todouble(grid@E0))) - (XI*((easts-todouble(grid@E0))^3.0d0)) + \
+						(XII*((easts-todouble(grid@E0))^5.0d0)) - (XIIA*((easts-todouble(grid@E0))^7.0d0))
 
 	
 	; create temporary variables for lat & lon data
@@ -373,35 +374,35 @@ begin
 	
 	
 	; calculate lambda0 for grid projection
-	lambda0 = grid@Lon_Ref * (PI/180.0d0)
+	lambda0 = todouble(grid@Lon_Ref) * (PI/180.0d0)
 	; calculate lambda for all longitudes
 	lambda = lons * (PI/180.0d0)
 
 	; calculate phi0 for grid projection
-	phi0 = grid@Lat_Ref * (PI/180.0d0)
+	phi0 = todouble(grid@Lat_Ref) * (PI/180.0d0)
 	; calculate phi for all latitudes
 	phi = lats * (PI/180.0d0)
 
 	; calculate variables in equations C1
-	ns = ( ellipsoid@a - ellipsoid@b ) / ( ellipsoid@a + ellipsoid@b )
+	ns = ( todouble(ellipsoid@a) - todouble(ellipsoid@b) ) / ( todouble(ellipsoid@a) + todouble(ellipsoid@b) )
 	
 	
 	; calculate M factor for every latitude value
-	M_fac = M_calculation(ellipsoid@b,grid@F0,ns,phi,phi0)
+	M_fac = M_calculation(todouble(ellipsoid@b),todouble(grid@F0),ns,phi,phi0)
 	
 	
 	; calculate e2 for the ellipsoid
-	e2 = ((ellipsoid@a^2.0d0)-(ellipsoid@b^2.0d0)) / (ellipsoid@a^2.0d0)
+	e2 = ((todouble(ellipsoid@a)^2.0d0)-(todouble(ellipsoid@b)^2.0d0)) / (todouble(ellipsoid@a)^2.0d0)
 	
 	; calculate the values for v, rho and eta2, Equations C2
-	v = ellipsoid@a * grid@F0 * \
+	v = todouble(ellipsoid@a) * todouble(grid@F0) * \
 		( (1.0d0-(e2*(sin(phi)^2.0d0)))^(-0.5d0) )
-	rho = ellipsoid@a * grid@F0 * (1.0d0-e2) * \
+	rho = todouble(ellipsoid@a) * todouble(grid@F0) * (1.0d0-e2) * \
 		( (1.0d0-(e2*(sin(phi)^2.0d0)))^(-1.5d0) )
 	eta2 = (v/rho)-1.0d0
 
 	; calculate factors for Equations C4
-	sec_I    = M_fac + grid@N0
+	sec_I    = M_fac + todouble(grid@N0)
 	
 	sec_II   = (v/2.0d0) * sin(phi) * cos(phi)
 
