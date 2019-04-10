@@ -17,8 +17,8 @@ import pandas as pd
 #from bng_to_latlon import OSGB36toWGS84
 
 
-#op_root = '/mnt/iusers01/support/mbessdl2/Projects/Emissions_Processing/Emission_Datasets/'
-op_root = '/Users/mbessdl2/work/manchester/EMEP/example_emissions_processing/Emission_Datasets/'
+op_root = '/mnt/iusers01/support/mbessdl2/Projects/Emissions_Processing/Emission_Datasets/'
+#op_root = '/Users/mbessdl2/work/manchester/EMEP/example_emissions_processing/Emission_Datasets/'
 
 ## path to excel spreadsheet with point source information
 ps_file = op_root+'NAEI_2016/download_data/'+'NAEIPointsSources_2016.xlsx'
@@ -28,8 +28,9 @@ ps_file = op_root+'NAEI_2016/download_data/'+'NAEIPointsSources_2016.xlsx'
 nc_origin = op_root+'NAEI_2016/emissions_netcdf/original_emep/'
 nc_work = op_root+'NAEI_2016/emissions_netcdf/'
 
-nc_head = ['ch4', 'nmvoc', 'so2', 'co', 'nh3', 'nox', 'pm10', 'pm2_5']
+nc_head = ['ch4', 'voc', 'so2', 'co', 'nh3', 'nox', 'pmco', 'pm25']
 tailstr = '_emiss.nc'
+
 
 #nc_files = [x + tailstr for x in nc_head]
 #nc_fpath = [nc_work + x for x in nc_files]
@@ -72,13 +73,13 @@ chem_species = ['Ammonia','Carbon monoxide','Oxides of nitrogen','Sulpher dioxid
                 'Non-methane VOC','PM10','PM2.5']
 chem_list = nc_head
 chem_mapping = {}
-chem_mapping['Non-methane VOC'] = 'nmvoc'
+chem_mapping['Non-methane VOC'] = 'voc'
 chem_mapping['Sulpher dioxide'] = 'so2'
 chem_mapping['Carbon monoxide'] = 'co'
 chem_mapping['Ammonia'] = 'nh3'
 chem_mapping['Oxides of nitrogen'] = 'nox'
-chem_mapping['PM10'] = 'pm10'
-chem_mapping['PM2.5'] = 'pm2_5'
+chem_mapping['PM10'] = 'pmco'
+chem_mapping['PM2.5'] = 'pm25'
 
 
 #%% housekeeping, backing up existing output files so we don't accidently delete these 
@@ -234,7 +235,7 @@ for chem in nc_head:
         total += tdata
     
     my_new_file = nc_work + chem + tailstr
-    orig_files[chem].to_netcdf(my_new_file)
+    orig_files[chem].to_netcdf(my_new_file,format='NETCDF3_CLASSIC')
 
         
 
