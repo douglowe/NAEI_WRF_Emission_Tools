@@ -39,19 +39,19 @@ netcdf_names ={"CH4"  :"ch4",\
                "CO"   :"co",\
                "HCl"  :"hcl",\
                "NH3"  :"nh3",\
-               "NMVOC":"nmvoc",\
+               "NMVOC":"voc",\
                "NOx"  :"nox",\
                "PM01" :"pm0_1",\
                "PM1"  :"pm1",\
-               "PM25" :"pm2_5",\
-               "PM10" :"pm10",\
+               "PM25" :"pm25",\
+               "PM10" :"pmco",\
                "SO2"  :"so2"}
 
 input_paths = {value: root_dir+value+"/" for value in species_dir}
 input_tails = {value: species_str[value]+root_tail for value in species_dir}
 
-output_paths = input_paths
-
+#output_paths = input_paths
+output_path = root_dir+"new_emissions_netcdf/"
 
 
 header_end = "NODATA"
@@ -222,11 +222,16 @@ def calculate_lat_lon_grids(headers):
 
     
     # set up the northing & easting data arrays
-    e_data = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
-    n_data = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
+    #e_data = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
+    #n_data = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
     
     latitude = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
     longitude = xr.DataArray(np.zeros((headers['nrows'],headers['ncols'])),dims=('lat','lon'))
+    
+    latitude.attrs['long_name'] = 'Latitude'
+    latitude.attrs['units'] = 'degrees_north'
+    longitude.attrs['long_name'] = 'Longitude'
+    longitude.attrs['units'] = 'degrees_east'
     
     
     # create 1D easting and westing arrays, switching from lower-left position to the middle of gridcell
@@ -234,33 +239,39 @@ def calculate_lat_lon_grids(headers):
                     np.arange(headers['xllcorner'],\
                           (headers['xllcorner']+headers['ncols']*headers['cellsize']),\
                           headers['cellsize']) \
-                              + int(headers['cellsize']/2) \
+                              + headers['cellsize']*0.5 \
                     ,dims=('lon'))
     northings = xr.DataArray( \
                     np.arange(headers['yllcorner'],\
                           (headers['yllcorner']+headers['nrows']*headers['cellsize']),\
                           headers['cellsize']) \
-                              + int(headers['cellsize']/2) \
+                              + headers['cellsize']*0.5 \
                     ,dims=('lat'))
     
-   
+    eastings.attrs['long_name'] = 'Eastings'
+    eastings.attrs['units'] = 'metres east from origin'
+    northings.attrs['long_name'] = 'Northings'
+    northings.attrs['units'] = 'metres north from origin'
+    
+    
     
     # copy the 1D arrays into the 2D arrays
-    for ii in np.arange(0,headers['nrows']):
-        e_data[ii,:] = eastings
-    for ii in np.arange(0,headers['ncols']):
-        n_data[:,ii] = northings
+    #for ii in np.arange(0,headers['nrows']):
+    #    e_data[ii,:] = eastings
+    #for ii in np.arange(0,headers['ncols']):
+    #    n_data[:,ii] = northings
 
     
     for ii in np.arange(0,headers['nrows']):
+        print('calculating lat/lon for row ',ii)
         for jj in np.arange(0,headers['ncols']):
-            (lat2,lon2) = OSGB36toWGS84(e_data.values[ii,jj],n_data.values[ii,jj])            
+            (lat2,lon2) = OSGB36toWGS84(eastings.values[jj],northings.values[ii])            
             #print(ii,jj,lat2,lon2)
             latitude[ii,jj]  = lat2
             longitude[ii,jj] = lon2
     
 
-    return(latitude,longitude,e_data,n_data)
+    return(latitude,longitude,eastings,northings)
 
 
 
@@ -278,9 +289,12 @@ headers = read_header(input_paths['CH4'],var_names[0]+input_tails['CH4'],header_
 
 # template for emission data arrays (with time dimension)
 emiss_template = xr.DataArray(np.zeros((2,headers['nrows'],headers['ncols'])),dims=('time','lat','lon'))
+emiss_template.attrs['units'] = 'tonnes/km^2/year'
 
 # date template array
 date = xr.DataArray([19000101, 21000101],dims=('time'))
+date.attrs['long_name'] = 'Date'
+date.attrs['units'] = 'YYYYMMDD'
 
 
 # create template dataset
@@ -306,6 +320,7 @@ for species in species_dir:
         try:
             test_data = pd.read_csv(test_file,header=None,\
                         skiprows=len(headers),delim_whitespace=True,na_values=headers['NODATA_value'])
+            test_data = test_data.fillna(0.0)
             print('opened '+emiss+' for '+species)
             emiss_data[0,:,:] = test_data.values[::-1,:] # flip the emission data vertically, 
             emiss_data[1,:,:] = test_data.values[::-1,:] #          to match the lat/lon grid
@@ -315,7 +330,7 @@ for species in species_dir:
         ds_working[emiss] = emiss_data
 
     # write to netcdf file
-    outfile = output_paths[species]+netcdf_names[species]+'_data.nc'
+    outfile = output_path+netcdf_names[species]+'_data.nc'
     ds_working.to_netcdf(path=outfile,mode='w')
 
 
