@@ -1,0 +1,15 @@
+---
+
+name: naei_netcdf
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python = 3
+  - numba
+  - xarray
+  - numpy
+  - pandas
+  - xlrd
+  - scipy
